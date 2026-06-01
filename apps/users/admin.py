@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.models import Group
 from django.contrib.auth.admin import UserAdmin
-from .models import User, Company, CompanyMembership
+from .models import Company, CompanyMembership, User
 
 admin.site.unregister(Group)
 
@@ -9,6 +9,7 @@ class CompanyMembershipInline(admin.TabularInline):
     model = CompanyMembership
     extra = 1
     autocomplete_fields = ['company']
+
 
 @admin.register(User)
 class MyUserAdmin(UserAdmin):

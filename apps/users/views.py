@@ -1,6 +1,5 @@
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse
+from django.shortcuts import redirect, render
 
 from .models import Company
 
@@ -20,7 +19,7 @@ def company_list(request):
 
 @login_required
 def switch_company(request, company_id):
-    company = get_object_or_404(request.user.get_companies(), pk=company_id)
-    request.session['current_company_id'] = company.id
-    next_url = request.GET.get('next') or reverse('users:company_list')
-    return redirect(next_url)
+    company = request.user.get_companies().filter(pk=company_id).first()
+    if company:
+        request.session['current_company_id'] = company.id
+    return redirect('users:company_list')

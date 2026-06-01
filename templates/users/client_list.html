@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}Clientes - {{ company.name }}{% endblock %}
+
+{% block content %}
+<h1>Clientes devedores</h1>
+{% if company %}
+    <p>Empresa atual: <strong>{{ company.name }}</strong></p>
+{% endif %}
+
+<p><a href="{% url 'users:client_create' %}">Cadastrar novo cliente</a></p>
+
+{% if debtors %}
+    <table>
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>WhatsApp</th>
+                <th>Nível de confiança</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for debtor in debtors %}
+                <tr>
+                    <td>{{ debtor.name }}</td>
+                    <td>{{ debtor.whatsapp }}</td>
+                    <td>{{ debtor.get_trust_level_display }}</td>
+                    <td>
+                        <a href="{% url 'users:client_update' debtor.pk %}">Editar</a> |
+                        <a href="{% url 'users:client_delete' debtor.pk %}">Excluir</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>Nenhum cliente cadastrado ainda.</p>
+{% endif %}
+{% endblock %}

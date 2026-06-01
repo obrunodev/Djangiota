@@ -9,6 +9,7 @@
         {% if request.user.is_authenticated %}
             Logged in as {{ request.user.username }} | 
             <a href="{% url 'users:company_list' %}">Companies</a>
+            | <a href="{% url 'customers:client_list' %}">Clientes</a>
             {% if current_company %}| Active company: {{ current_company.name }}{% endif %}
         {% else %}
             <a href="/admin/login/">Log in</a>
