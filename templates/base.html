@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>{% block title %}Djangiota{% endblock %}</title>
+</head>
+<body>
+    <nav>
+        {% if request.user.is_authenticated %}
+            Logged in as {{ request.user.username }} | 
+            <a href="{% url 'users:company_list' %}">Companies</a>
+            {% if current_company %}| Active company: {{ current_company.name }}{% endif %}
+        {% else %}
+            <a href="/admin/login/">Log in</a>
+        {% endif %}
+    </nav>
+    <hr />
+    {% block content %}{% endblock %}
+</body>
+</html>

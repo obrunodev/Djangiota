@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block title %}My companies{% endblock %}
+
+{% block content %}
+<h1>My companies</h1>
+{% if current_company %}
+    <p>Current company: <strong>{{ current_company.name }}</strong></p>
+{% endif %}
+<ul>
+    {% for company in companies %}
+        <li>
+            {% if current_company and company.id == current_company.id %}
+                <strong>{{ company.name }} (active)</strong>
+            {% else %}
+                {{ company.name }} - <a href="{% url 'users:switch_company' company.id %}?next={{ request.path|urlencode }}">Switch</a>
+            {% endif %}
+        </li>
+    {% empty %}
+        <li>No companies assigned.</li>
+    {% endfor %}
+</ul>
+{% endblock %}
