@@ -73,3 +73,5 @@ def debtor_delete(request, pk):
         'customers/client_confirm_delete.html',
         {'company': company, 'debtor': debtor},
     )
+
+

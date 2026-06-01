@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+
+{% block title %}{{ loan.debtor.name }} - Detalhes do Empréstimo{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>{{ loan.debtor.name }}</h1>
+        <div>
+            <a href="{% url 'loan-update' loan.id %}" class="btn btn-warning">
+                <i class="bi bi-pencil"></i> Editar
+            </a>
+            <a href="{% url 'loan-list' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Informações Gerais -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Informações do Empréstimo</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="text-muted">Status</label>
+                            <div>
+                                {% if loan.status == 'active' %}
+                                    <span class="badge bg-primary">Ativo</span>
+                                {% elif loan.status == 'paid' %}
+                                    <span class="badge bg-success">Pago</span>
+                                {% elif loan.status == 'overdue' %}
+                                    <span class="badge bg-danger">Atrasado</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ loan.get_status_display }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted">Nível de Confiança</label>
+                            <div>
+                                {% if loan.debtor.trust_level == 'high' %}
+                                    <span class="badge bg-success">Alto</span>
+                                {% elif loan.debtor.trust_level == 'medium' %}
+                                    <span class="badge bg-warning">Médio</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Baixo</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="text-muted">Valor Emprestado</label>
+                            <h5 class="text-success">R$ {{ loan.amount_borrowed|floatformat:2 }}</h5>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="text-muted">Taxa de Juros</label>
+                            <h5 class="text-warning">{{ loan.interest_rate }}%</h5>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="text-muted">Data do Empréstimo</label>
+                            <h5>{{ loan.loan_date|date:"d/m/Y" }}</h5>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="text-muted">Data de Vencimento</label>
+                            <h5>{{ loan.due_date|date:"d/m/Y" }}</h5>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="text-muted">Total de Juros</label>
+                            <h5 class="text-danger">R$ {{ loan.total_interest|floatformat:2 }}</h5>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="text-muted">Valor Final (com juros)</label>
+                            <h4 class="text-danger">R$ {{ loan.final_amount|floatformat:2 }}</h4>
+                        </div>
+                    </div>
+
+                    {% if loan.notes %}
+                    <hr>
+                    <div>
+                        <label class="text-muted">Notas</label>
+                        <p>{{ loan.notes }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Parcelas -->
+            <div class="card">
+                <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Parcelas</h5>
+                    <span class="badge bg-light text-dark">{{ loan.num_installments }}x de R$ {{ loan.installment_amount|floatformat:2 }}</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Parcela</th>
+                                <th>Valor</th>
+                                <th>Data Prevista</th>
+                                <th>Status</th>
+                                <th>Data de Pagamento</th>
+                                <th>Valor Pago</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for payment in payments %}
+                            <tr>
+                                <td><strong>#{{ payment.installment_number }}</strong></td>
+                                <td>R$ {{ payment.amount|floatformat:2 }}</td>
+                                <td>{{ payment.due_date|date:"d/m/Y" }}</td>
+                                <td>
+                                    {% if payment.status == 'pending' %}
+                                        <span class="badge bg-warning">Pendente</span>
+                                    {% elif payment.status == 'paid' %}
+                                        <span class="badge bg-success">Pago</span>
+                                    {% elif payment.status == 'overdue' %}
+                                        <span class="badge bg-danger">Atrasado</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if payment.paid_date %}
+                                        {{ payment.paid_date|date:"d/m/Y" }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if payment.paid_amount %}
+                                        R$ {{ payment.paid_amount|floatformat:2 }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if payment.status == 'pending' %}
+                                    <a href="{% url 'loan-payment-create' loan.id %}" class="btn btn-sm btn-success">
+                                        <i class="bi bi-check"></i> Pagar
+                                    </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer bg-light">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="text-muted">Já Pago</label>
+                            <h5 class="text-success">R$ {{ paid_amount|floatformat:2 }}</h5>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted">Faltando Pagar</label>
+                            <h5 class="text-danger">R$ {{ remaining_amount|floatformat:2 }}</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumo Lateral -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Resumo de Pagamentos</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="text-muted">Parcelas Pagas</label>
+                        <h4><span class="badge bg-success">{{ paid_installments }}</span> / {{ loan.num_installments }}</h4>
+                    </div>
+                    <div class="mb-3">
+                        <label class="text-muted">Parcelas Pendentes</label>
+                        <h4><span class="badge bg-warning">{{ pending_installments }}</span></h4>
+                    </div>
+                    <hr>
+                    <div class="mb-3">
+                        <label class="text-muted">Percentual de Conclusão</label>
+                        <div class="progress">
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 style="width: {% widthratio paid_installments loan.num_installments 100 %}%"
+                                 aria-valuenow="{% widthratio paid_installments loan.num_installments 100 %}" 
+                                 aria-valuemin="0" aria-valuemax="100">
+                                {% widthratio paid_installments loan.num_installments 100 %}%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Informações do Devedor</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Nome:</strong> {{ loan.debtor.name }}</p>
+                    {% if loan.debtor.whatsapp %}
+                    <p><strong>WhatsApp:</strong> {{ loan.debtor.whatsapp }}</p>
+                    {% endif %}
+                    <p><strong>Nível de Confiança:</strong> 
+                        {% if loan.debtor.trust_level == 'high' %}
+                            <span class="badge bg-success">Alto</span>
+                        {% elif loan.debtor.trust_level == 'medium' %}
+                            <span class="badge bg-warning">Médio</span>
+                        {% else %}
+                            <span class="badge bg-danger">Baixo</span>
+                        {% endif %}
+                    </p>
+                    <p><strong>Total de Empréstimos:</strong> {{ loan.debtor.loans.count }}</p>
+                    <p><strong>Cadastro:</strong> {{ loan.debtor.created_at|date:"d/m/Y H:i" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

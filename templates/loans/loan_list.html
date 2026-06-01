@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Empréstimos{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Empréstimos</h1>
+        <a href="{% url 'loan-create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Novo Empréstimo
+        </a>
+    </div>
+
+    <!-- Estatísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6 class="text-muted">Empréstimos Ativos</h6>
+                    <h3 class="text-primary">{{ active_loans }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6 class="text-muted">Total Emprestado</h6>
+                    <h3 class="text-success">R$ {{ total_borrowed|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6 class="text-muted">Com Juros</h6>
+                    <h3 class="text-danger">R$ {{ total_with_interest|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6 class="text-muted">Já Recebido</h6>
+                    <h3 class="text-info">R$ {{ total_paid|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" name="search" class="form-control" placeholder="Buscar devedor..." value="{{ request.GET.search }}">
+                </div>
+                <div class="col-md-3">
+                    <select name="status" class="form-select">
+                        <option value="">Todos os Status</option>
+                        {% for value, label in status_choices %}
+                            <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-outline-primary w-100">Filtrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de Empréstimos -->
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Devedor</th>
+                        <th>Valor Inicial</th>
+                        <th>Taxa Juros</th>
+                        <th>Valor Final</th>
+                        <th>Parcelas</th>
+                        <th>Status</th>
+                        <th>Data do Empréstimo</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for loan in loans %}
+                    <tr>
+                        <td>
+                            <strong>{{ loan.debtor.name }}</strong>
+                            {% if loan.debtor.whatsapp %}
+                                <br><small class="text-muted">{{ loan.debtor.whatsapp }}</small>
+                            {% endif %}
+                        </td>
+                        <td>R$ {{ loan.amount_borrowed|floatformat:2 }}</td>
+                        <td>
+                            <span class="badge bg-warning">{{ loan.interest_rate }}%</span>
+                        </td>
+                        <td>
+                            <strong class="text-danger">R$ {{ loan.final_amount|floatformat:2 }}</strong>
+                            {% if loan.total_interest > 0 %}
+                                <br><small class="text-muted">Juros: R$ {{ loan.total_interest|floatformat:2 }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-info">{{ loan.num_installments }}x</span>
+                            <br><small>R$ {{ loan.installment_amount|floatformat:2 }}</small>
+                        </td>
+                        <td>
+                            {% if loan.status == 'active' %}
+                                <span class="badge bg-primary">Ativo</span>
+                            {% elif loan.status == 'paid' %}
+                                <span class="badge bg-success">Pago</span>
+                            {% elif loan.status == 'overdue' %}
+                                <span class="badge bg-danger">Atrasado</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ loan.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small>{{ loan.loan_date|date:"d/m/Y" }}</small>
+                            <br><small class="text-muted">Vence: {{ loan.due_date|date:"d/m/Y" }}</small>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'loan-detail' loan.id %}" class="btn btn-outline-info" title="Detalhes">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{% url 'loan-update' loan.id %}" class="btn btn-outline-warning" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{% url 'loan-delete' loan.id %}" class="btn btn-outline-danger" title="Deletar">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">
+                            Nenhum empréstimo encontrado
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Paginação -->
+    {% if is_paginated %}
+    <nav class="mt-4" aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1">Primeira</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                </li>
+            {% endif %}
+
+            <li class="page-item active">
+                <span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+            </li>
+
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Próxima</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard de Empréstimos{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Dashboard de Empréstimos</h1>
+        <a href="{% url 'loan-create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Novo Empréstimo
+        </a>
+    </div>
+
+    <!-- Estatísticas Principais -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-calculator text-primary" style="font-size: 2rem;"></i>
+                    <h6 class="text-muted mt-3">Empréstimos Ativos</h6>
+                    <h2 class="text-primary">{{ stats.total_active_loans }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-cash-coin text-success" style="font-size: 2rem;"></i>
+                    <h6 class="text-muted mt-3">Total Emprestado</h6>
+                    <h2 class="text-success">R$ {{ stats.total_borrowed|floatformat:2 }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-percent text-danger" style="font-size: 2rem;"></i>
+                    <h6 class="text-muted mt-3">Com Juros</h6>
+                    <h2 class="text-danger">R$ {{ stats.total_with_interest|floatformat:2 }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="bi bi-check-circle text-info" style="font-size: 2rem;"></i>
+                    <h6 class="text-muted mt-3">Já Recebido</h6>
+                    <h2 class="text-info">R$ {{ stats.total_paid|floatformat:2 }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Empréstimos Vencidos -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> Empréstimos Vencidos
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if overdue_loans %}
+                    <div class="list-group list-group-flush">
+                        {% for loan in overdue_loans %}
+                        <a href="{% url 'loan-detail' loan.id %}" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">{{ loan.debtor.name }}</h6>
+                                    <p class="mb-0 text-muted small">
+                                        Vencido em: {{ loan.due_date|date:"d/m/Y" }}
+                                    </p>
+                                </div>
+                                <span class="badge bg-danger">R$ {{ loan.remaining_amount|floatformat:2 }}</span>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-0">Nenhum empréstimo vencido!</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Próximos Pagamentos -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-calendar-event"></i> Próximos Pagamentos
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if upcoming_payments %}
+                    <div class="list-group list-group-flush">
+                        {% for payment in upcoming_payments %}
+                        <a href="{% url 'loan-detail' payment.loan.id %}" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">
+                                        {{ payment.loan.debtor.name }}
+                                        <span class="badge bg-info">Parcela #{{ payment.installment_number }}</span>
+                                    </h6>
+                                    <p class="mb-0 text-muted small">
+                                        Vencimento: {{ payment.due_date|date:"d/m/Y" }}
+                                    </p>
+                                </div>
+                                <span class="badge bg-warning">R$ {{ payment.amount|floatformat:2 }}</span>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-0">Nenhum pagamento programado!</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Empréstimos Ativos Recentes -->
+    <div class="card mt-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">Empréstimos Ativos Recentes</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Devedor</th>
+                        <th>Valor</th>
+                        <th>Taxa</th>
+                        <th>Parcelas</th>
+                        <th>Data do Empréstimo</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for loan in active_loans %}
+                    <tr>
+                        <td>
+                            <strong>{{ loan.debtor.name }}</strong>
+                            {% if loan.debtor.whatsapp %}
+                                <br><small class="text-muted">{{ loan.debtor.whatsapp }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            R$ {{ loan.amount_borrowed|floatformat:2 }}
+                            <br><small class="text-danger">Final: R$ {{ loan.final_amount|floatformat:2 }}</small>
+                        </td>
+                        <td><span class="badge bg-warning">{{ loan.interest_rate }}%</span></td>
+                        <td><span class="badge bg-info">{{ loan.num_installments }}x</span></td>
+                        <td>{{ loan.loan_date|date:"d/m/Y" }}</td>
+                        <td>
+                            <a href="{% url 'loan-detail' loan.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> Ver
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
