@@ -18,7 +18,7 @@ class LoanListView(LoginRequiredMixin, ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        company = self.request.user.active_company
+        company = self.request.current_company
         queryset = Loan.objects.filter(company=company).select_related('debtor')
         
         # Filtro por status
@@ -43,7 +43,7 @@ class LoanListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        company = self.request.user.active_company
+        company = self.request.current_company
         
         # Estatísticas
         context['total_borrowed'] = Loan.objects.filter(company=company).aggregate(
@@ -100,7 +100,7 @@ class LoanCreateView(LoginRequiredMixin, CreateView):
     success_url = reverse_lazy('loan-list')
 
     def form_valid(self, form):
-        form.instance.company = self.request.user.active_company
+        form.instance.company = self.request.current_company
         response = super().form_valid(form)
         
         # Cria as parcelas automaticamente
@@ -131,7 +131,7 @@ class LoanCreateView(LoginRequiredMixin, CreateView):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs['company'] = self.request.user.active_company
+        kwargs['company'] = self.request.current_company
         return kwargs
 
     def get_context_data(self, **kwargs):
@@ -149,7 +149,7 @@ class LoanUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs['company'] = self.request.user.active_company
+        kwargs['company'] = self.request.current_company
         return kwargs
 
     def get_context_data(self, **kwargs):
@@ -167,7 +167,7 @@ class LoanDeleteView(LoginRequiredMixin, DeleteView):
 
 def loan_payment_create(request, loan_id):
     """Registrar pagamento de uma parcela"""
-    loan = get_object_or_404(Loan, id=loan_id, company=request.user.active_company)
+    loan = get_object_or_404(Loan, id=loan_id, company=request.current_company)
     
     # Pega as parcelas pendentes
     pending_payments = loan.payments.filter(status='pending').order_by('installment_number')
@@ -198,7 +198,7 @@ def loan_payment_create(request, loan_id):
 
 def loan_dashboard(request):
     """Dashboard com resumo dos empréstimos"""
-    company = request.user.active_company
+    company = request.current_company
     
     # Empréstimos ativos
     active_loans = Loan.objects.filter(company=company, status='active')
